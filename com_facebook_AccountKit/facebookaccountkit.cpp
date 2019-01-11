@@ -28,7 +28,7 @@ public:
     int m_receiverRequestCode;
 };
 #else
-class FacebookAccountKitPrivate : public QAndroidActivityResultReceiver
+class FacebookAccountKitPrivate
 {
     Q_DECLARE_PUBLIC(FacebookAccountKit)
 public:

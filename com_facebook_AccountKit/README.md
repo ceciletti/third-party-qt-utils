@@ -7,7 +7,6 @@ auto ak = new FacebookAccountKit(FacebookAccountKit::PHONE, FacebookAccountKit::
 ak->setDefaultCountryCode(QStringLiteral("BR")); // Optional
 ak->setSMSWhitelist({ QStringLiteral("BR") }); // Optional
 ak->setInitialPhoneNumber(QStringLiteral("55"), QStringLiteral("11999999999"), QStringLiteral("BR")); // Optional
-ak->show();
 connect(ak, &FacebookAccountKit::cancelled, this, [=] {
     qDebug() << "got cancelled";
     ak->deleteLater();
@@ -20,4 +19,5 @@ connect(ak, &FacebookAccountKit::success, this, [=] (const QString &data) {
     qDebug() << "got success code/token" << data;
     ak->deleteLater();
 });
+ak->show(); // Call after the connects are done to get an error when not on Android
 ```
