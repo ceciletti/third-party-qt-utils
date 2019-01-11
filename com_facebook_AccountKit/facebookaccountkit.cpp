@@ -2,7 +2,7 @@
 
 #include <QLoggingCategory>
 
-Q_LOGGING_CATEGORY(FB_ACCOUNTKIT, "facebook.accountkit")
+Q_LOGGING_CATEGORY(FB_ACCOUNTKIT, "facebook.accountkit", QtInfoMsg)
 
 #ifdef Q_OS_ANDROID
 #include <QtAndroid>
@@ -51,7 +51,7 @@ FacebookAccountKit::FacebookAccountKit(FacebookAccountKit::LoginType loginType, 
                                                                              "Lcom/facebook/accountkit/ui/LoginType;");
     Q_ASSERT(loginT.isValid());
 
-    const QAndroidJniObject responseT  = QAndroidJniObject::getStaticObjectField("com/facebook/accountkit/ui/AccountKitActivity$ResponseType",
+    const QAndroidJniObject responseT = QAndroidJniObject::getStaticObjectField("com/facebook/accountkit/ui/AccountKitActivity$ResponseType",
                                                                                  responseType == CODE ? "CODE" : "TOKEN",
                                                                                  "Lcom/facebook/accountkit/ui/AccountKitActivity$ResponseType;");
     Q_ASSERT(responseT.isValid());
@@ -184,12 +184,12 @@ void FacebookAccountKit::show(int receiverRequestCode)
     const QAndroidJniObject config = d->configurationBuilder.callObjectMethod("build", "()Lcom/facebook/accountkit/ui/AccountKitConfiguration;");
     Q_ASSERT(config.isValid());
 
-    QAndroidIntent intent(QtAndroid::androidActivity().object(), "com.facebook.accountkit.ui.AccountKitActivity");
+    QAndroidIntent intent(QtAndroid::androidActivity(), "com.facebook.accountkit.ui.AccountKitActivity");
     Q_ASSERT(intent.handle().isValid());
 
     intent.handle().callMethod<void>("putExtra",
                                      "(Ljava/lang/String;Landroid/os/Parcelable;)Landroid/content/Intent;",
-                                     QAndroidJniObject::fromString(configKey).object(),
+                                     QAndroidJniObject::fromString(configKey).object<jstring>(),
                                      config.object());
 
     d->m_receiverRequestCode = receiverRequestCode;
@@ -213,7 +213,7 @@ void FacebookAccountKitPrivate::handleActivityResult(int receiverRequestCode, in
                                                                                "RESULT_KEY").toString();
     const QAndroidJniObject loginResult = data.callObjectMethod("getParcelableExtra",
                                                                 "(Ljava/lang/String;)Landroid/os/Parcelable;",
-                                                                QAndroidJniObject::fromString(resultKey).object());
+                                                                QAndroidJniObject::fromString(resultKey).object<jstring>());
     Q_ASSERT(loginResult.isValid());
 
     const QAndroidJniObject error = loginResult.callObjectMethod("getError", "()Lcom/facebook/accountkit/AccountKitError;");
@@ -230,7 +230,7 @@ void FacebookAccountKitPrivate::handleActivityResult(int receiverRequestCode, in
         Q_EMIT q->cancelled();
     } else {
         QString code;
-        const QAndroidJniObject token = loginResult.callObjectMethod("getAccessToken", "()Lcom/facebook/accountkit/AccessToken;").object();
+        const QAndroidJniObject token = loginResult.callObjectMethod("getAccessToken", "()Lcom/facebook/accountkit/AccessToken;");
         if (token.isValid()) {
             code = token.callObjectMethod<jstring>("getAccountId").toString();
             qCDebug(FB_ACCOUNTKIT) << "got token" << code;
