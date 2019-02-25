@@ -1,6 +1,7 @@
 #include "facebookaccountkit.h"
 
 #include <QLoggingCategory>
+#include <QTimer>
 
 Q_LOGGING_CATEGORY(FB_ACCOUNTKIT, "facebook.accountkit", QtInfoMsg)
 
@@ -178,8 +179,9 @@ void FacebookAccountKit::show(int receiverRequestCode)
 #ifdef Q_OS_ANDROID
     Q_D(FacebookAccountKit);
 
-    const QString configKey = QAndroidJniObject::getStaticObjectField<jstring>("com/facebook/accountkit/ui/AccountKitActivity",
-                                                                               "ACCOUNT_KIT_ACTIVITY_CONFIGURATION").toString();
+//    const QString configKey = QAndroidJniObject::getStaticObjectField<jstring>("com/facebook/accountkit/ui/AccountKitActivity",
+//                                                                               "ACCOUNT_KIT_ACTIVITY_CONFIGURATION").toString();
+    const QString configKey = QStringLiteral("AccountKitConfiguration");
 
     const QAndroidJniObject config = d->configurationBuilder.callObjectMethod("build", "()Lcom/facebook/accountkit/ui/AccountKitConfiguration;");
     Q_ASSERT(config.isValid());
@@ -187,15 +189,18 @@ void FacebookAccountKit::show(int receiverRequestCode)
     QAndroidIntent intent(QtAndroid::androidActivity(), "com.facebook.accountkit.ui.AccountKitActivity");
     Q_ASSERT(intent.handle().isValid());
 
-    intent.handle().callMethod<void>("putExtra",
+    intent.handle().callObjectMethod("putExtra",
                                      "(Ljava/lang/String;Landroid/os/Parcelable;)Landroid/content/Intent;",
                                      QAndroidJniObject::fromString(configKey).object<jstring>(),
                                      config.object());
+    Q_ASSERT(intent.handle().isValid());
 
     d->m_receiverRequestCode = receiverRequestCode;
     QtAndroid::startActivity(intent.handle(), receiverRequestCode, d);
 #else
-    Q_EMIT error(INTERNAL_ERROR, QStringLiteral("Not Android OS"));
+    QTimer::singleShot(0, this, [=] {
+        Q_EMIT error(INTERNAL_ERROR, QStringLiteral("Not Android OS"));
+    });
 #endif
 }
 
